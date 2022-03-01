@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.20)
 project(range_sum_query_immutable)
 
 set(CMAKE_CXX_STANDARD 17)

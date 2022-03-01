@@ -3,6 +3,9 @@
 #include <iostream>
 #include <vector>
 #include <numeric>
+#include <fstream>
+#include <sstream>
+#include <filesystem>
 
 using namespace std;
 
@@ -23,12 +26,13 @@ class NumArray {
   Node *root;
 
   Node *buildSumTree(int start, int count, const vector<int> &nums) {
-    int sum = accumulate(nums.begin() + start, nums.begin() + start + count, 0);
-//    clog << "sum["s << start << ";"s << start + count - 1 << "] = "s << sum << endl;
-    Node *root = new Node(start, start + count - 1, sum);
+    Node *root = new Node(start, start + count - 1, 0);
     if (1 < count) {
       root->left = buildSumTree(start, count / 2, nums);
       root->right = buildSumTree(start + count / 2, count - count / 2, nums);
+      root->sum = root->left->sum + root->right->sum;
+    } else {
+      root->sum = nums[start];
     }
 
     return root;
@@ -40,15 +44,13 @@ class NumArray {
 
   int sumRange(Node *root, int left, int right) {
     if (root) {
-//      clog << "sumRange("s << left << ","s << right << ")"s << endl;
-//      clog << "node=[left="s << root->start << ", right="s << root->end << "]"s << endl;
-      vector<bool> range_tests{inRange(root->start, left, right), inRange(root->end, left, right)};
-      auto get_bool = [](bool test) { return test; };
-      bool lr_contains_node = all_of(range_tests.begin(), range_tests.end(), get_bool);
-      bool node_contains_lr = none_of(range_tests.begin(), range_tests.end(), get_bool);
-      bool intersects = any_of(range_tests.begin(), range_tests.end(), get_bool);
+      const bool lr_contains_node_start = inRange(root->start, left, right);
+      const bool lr_contains_node_end = inRange(root->end, left, right);
+      const bool lr_contains_node = lr_contains_node_start && lr_contains_node_end;
+      const bool node_contains_lr = !lr_contains_node_start and !lr_contains_node_end;
+      const bool intersects = lr_contains_node_start || lr_contains_node_end;
       if (lr_contains_node) { return root->sum; }
-      else if (node_contains_lr or intersects) {
+      else if (node_contains_lr || intersects) {
         return sumRange(root->left, left, right) + sumRange(root->right, left, right);
       }
     }
@@ -82,8 +84,45 @@ void TestNumArray() {
   }
 }
 
-int main() {
-  TestNumArray();
-  cout << "Ok!" << endl;
+int ProcessInput(istream& in) {
+  string line;
+  if (getline(in, line)) {
+    vector<int> nums;
+    stringstream snums{line};
+    int n;
+    while (snums >> n) {
+      nums.push_back(n);
+    }
+    NumArray num_array{nums};;
+    int count;
+    in >> count;
+    getline(in, line);
+    for (int i = 0; i < count; ++i) {
+      int left, right;
+      if (in >> left >> right) {
+        cout << num_array.sumRange(left, right) << '\n';
+      } else {
+        cerr << "Failed to parse query "s << count;
+        return 1;
+      }
+    }
+  }
+
+  return 0;
+}
+
+int main(int argc, char** argv) {
+  if (argc == 2) {
+    ifstream in{argv[1]};
+    if (in.is_open()) {
+      ProcessInput(in);
+    } else {
+      cerr << "Cannot read "s << filesystem::current_path().append(argv[1]) << endl;
+      return 1;
+    }
+  } else {
+    ProcessInput(cin);
+  }
+
   return 0;
 }

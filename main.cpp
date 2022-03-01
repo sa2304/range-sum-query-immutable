@@ -10,61 +10,18 @@
 using namespace std;
 
 class NumArray {
-  struct Node {
-    explicit Node(int start, int end, int sum)
-        : start(start), end(end), sum(sum) {}
-
-    Node *left = nullptr;
-    Node *right = nullptr;
-
-    int start;
-    int end;
-
-    int sum;
-  };
-
-  Node *root;
-
-  Node *buildSumTree(int start, int count, const vector<int> &nums) {
-    Node *root = new Node(start, start + count - 1, 0);
-    if (1 < count) {
-      root->left = buildSumTree(start, count / 2, nums);
-      root->right = buildSumTree(start + count / 2, count - count / 2, nums);
-      root->sum = root->left->sum + root->right->sum;
-    } else {
-      root->sum = nums[start];
-    }
-
-    return root;
-  }
-
-  bool inRange(int x, int start, int end) {
-    return start <= x and x <= end;
-  }
-
-  int sumRange(Node *root, int left, int right) {
-    if (root) {
-      const bool lr_contains_node_start = inRange(root->start, left, right);
-      const bool lr_contains_node_end = inRange(root->end, left, right);
-      const bool lr_contains_node = lr_contains_node_start && lr_contains_node_end;
-      const bool node_contains_lr = !lr_contains_node_start and !lr_contains_node_end;
-      const bool intersects = lr_contains_node_start || lr_contains_node_end;
-      if (lr_contains_node) { return root->sum; }
-      else if (node_contains_lr || intersects) {
-        return sumRange(root->left, left, right) + sumRange(root->right, left, right);
-      }
-    }
-
-    return 0;
-  }
-
+  vector<int> prefix_sum;
  public:
   NumArray(vector<int> &nums) {
-    root = buildSumTree(0, nums.size(), nums);
+    prefix_sum.resize(nums.size());
+    prefix_sum.front() = nums.front();
+    for (int i = 1; i < nums.size(); ++i) {
+      prefix_sum[i] = prefix_sum[i - 1] + nums[i];
+    }
   }
 
   int sumRange(int left, int right) {
-    return sumRange(root, left, right);
+    return (0 < left) ? prefix_sum[right] - prefix_sum[left - 1] : prefix_sum[right];
   }
 };
 
